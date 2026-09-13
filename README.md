@@ -139,10 +139,16 @@ app/
 mcp/
   lib/omp_inbox_mcp.rb         # MCP server (Bridge #2)
   server                       # executable
+skills/
+  volunteer-voice-booking/     # reusable Agent Skill (contributed upstream)
 ```
 
 > See `MANIFEST.md` for the exact list of extracted files and what was
 > intentionally left out of this slice.
+>
+> `skills/volunteer-voice-booking/` is the portable Agent Skill extracted from
+> this integration. It is also contributed upstream to
+> [`CALLE-AI/awesome-phone-call-agents`](https://github.com/CALLE-AI/awesome-phone-call-agents).
 
 ---
 

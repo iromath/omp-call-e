@@ -69,6 +69,16 @@ preserves the original directory structure).
 | `call-e-inbox-readback-plan.md` | Dev plan for the "Read your Inbox" hotline feature |
 | `call-e-vendor-support-report.md` | Consolidated CALL-E vendor issues (`CSE-*`) |
 
+### `skills/`
+
+| File | Purpose |
+|------|---------|
+| `volunteer-voice-booking/SKILL.md` | Portable Agent Skill: callback booking flow |
+| `volunteer-voice-booking/references/safety.md` | Safety rules (disclosure, masking, human gate) |
+| `volunteer-voice-booking/references/examples.md` | Safe/unsafe request JSON + dry-run output shape |
+| `volunteer-voice-booking/scripts/preview-volunteer-booking.mjs` | No-call dry-run preview |
+| `volunteer-voice-booking/assets/sample-volunteer-request.json` | Sample input for the dry-run preview |
+
 ---
 
 ## Intentionally excluded
