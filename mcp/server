@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# OpenmindProjects Inbox MCP server — executable entrypoint.
+#
+# Boots the full Rails application so the tools reuse VolunteerInboxService (the
+# single PIN/rate-limit security gate) instead of reimplementing auth. Run it as
+# a stdio MCP server, e.g. from Claude Desktop / Claude Code:
+#
+#   bin/mcp-server  (see mcp/README.md for a ready config)
+#
+# stdout carries ONLY the JSON-RPC stream; all Rails/ActiveRecord logging is
+# redirected to stderr so it never corrupts the protocol.
+
+require_relative "../config/environment"
+
+# Keep stdout clean for the JSON-RPC stream.
+Rails.logger = ActiveSupport::Logger.new($stderr)
+ActiveRecord::Base.logger = ActiveSupport::Logger.new($stderr) if defined?(ActiveRecord::Base)
+
+require_relative "lib/omp_inbox_mcp"
+
+OmpInboxMcp::Server.new.run
