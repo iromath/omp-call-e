@@ -141,9 +141,6 @@ mcp/
   server                       # executable
 ```
 
-> For the exact files to copy into this repo from the full platform, see
-> `MANIFEST.md`.
-
 ---
 
 ## Configuration
