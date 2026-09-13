@@ -141,6 +141,9 @@ mcp/
   server                       # executable
 ```
 
+> See `MANIFEST.md` for the exact list of extracted files and what was
+> intentionally left out of this slice.
+
 ---
 
 ## Configuration
