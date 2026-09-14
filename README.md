@@ -1,16 +1,16 @@
-# OpenmindProjects — Volunteer Voice Concierge (CALL-E integration)
+# OpenmindProjects: Volunteer Voice Concierge (CALL-E integration)
 
 An AI **voice concierge** for [OpenmindProjects](https://call-e.openmindprojects.org),
 a nonprofit that connects volunteers with education projects across Southeast
 Asia. Instead of filling in a web form, a volunteer picks up the phone: a CALL-E
 voice agent interviews them, checks live availability, and books a real Google
-Calendar + Google Meet appointment — no app, no signup.
+Calendar + Google Meet appointment, no app, no signup.
 
 This repository is a **focused slice** of the full OpenmindProjects platform,
 containing only the code that integrates with **CALL-E** and operates phone
 calls. The rest of the platform (payments, missions, CRM, reviews) is private.
 
-> **Devpost project:** *Hello Volunteer: Voice Booking Concierge*
+> **Devpost project:** *Hello Volunteer: Goal-Driven Voice Booking*
 > **Live demo:**
 > - Volunteer application form: https://call-e.openmindprojects.org/apply/new
 > - Book a call form: https://call-e.openmindprojects.org/bookcall
@@ -29,7 +29,37 @@ Three volunteer flows run through one CALL-E integration:
 | **Host voice tasks** | Outbound | A host approves & dispatches an onboarding/feedback task | CALL-E calls the volunteer and reads back the outcome |
 
 Every confirmed appointment lands in **Google Calendar** with a **Google Meet**
-link and a confirmation email — the same pipeline the web form uses.
+link and a confirmation email, the same pipeline the web form uses.
+
+### The core loop
+
+Every flow runs the same loop: `start_call` (POST) → poll to a terminal status →
+persist. Only the trigger, goal, and result schema differ.
+
+```text
+start_call (POST /v1/calls) ── task + recipient_result_schema
+            │  run_id "call_…"
+            ▼
+loop: call_status (GET /v1/calls/{run_id}) ── poll every 10s, max 180s
+            │  terminal?
+            ▼
+persist result ── status · summary · transcript · structured_result
+```
+
+### Book a callback (outbound)
+
+```text
+CallbackRequest ──> CallbackCallJob ──> start_call (booking_goal)
+                                          │  run_id
+                                          ▼
+                                     poll to terminal
+                                          │
+                                          ▼
+                               apply_terminal_result! ──> CallBooking
+                                          │
+                                          ▼
+                              BookAppointmentJob ──> Google Calendar + Meet + email
+```
 
 ### The "read your inbox" path
 
@@ -43,13 +73,13 @@ messages verbatim. The same logic is also exposed as a reusable **MCP server**
 
 ## How it's built
 
-- **CALL-E Developer API v0.7.0** — a thin Ruby HTTP wrapper (CALL-E ships no
+- **CALL-E Developer API v0.7.0:** a thin Ruby HTTP wrapper (CALL-E ships no
   official Ruby SDK), calling `POST /v1/calls` and `GET /v1/calls/{id}` directly.
 - **Ruby on Rails 7+** background jobs that start a call, poll to a terminal
   status, then persist the structured result.
-- **Google Calendar v3 + Meet** — `conferenceData.createRequest` auto-generates a
+- **Google Calendar v3 + Meet:** `conferenceData.createRequest` auto-generates a
   Meet link; events are written to per-type calendars.
-- **Model Context Protocol (MCP)** — a dependency-free stdio JSON-RPC 2.0 server
+- **Model Context Protocol (MCP):** a dependency-free stdio JSON-RPC 2.0 server
   exposing the inbox/status tools to external agent hosts.
 
 ### The core CALL-E call
@@ -63,7 +93,7 @@ result = CalleClient.start_call(
   goal: task.voice_goal,              # natural-language script
   result_schema: CalleClient::RECIPIENT_RESULT_SCHEMA
 )
-# result.run_id => "call_..." — poll until terminal
+# result.run_id => "call_..." (poll until terminal)
 status = CalleClient.call_status(result.run_id)
 ```
 
@@ -77,7 +107,7 @@ status = CalleClient.call_status(result.run_id)
 CALL-E places real, billed phone calls, so the integration is safe by default:
 
 1. **Dry-run is the default.** `CalleClient#dry_run?` returns true unless
-   `CALLE_DRY_RUN=0` is explicitly set — every other path returns a fixture and
+   `CALLE_DRY_RUN=0` is explicitly set; every other path returns a fixture and
    places **no** call:
 
    ```ruby
@@ -90,7 +120,7 @@ CALL-E places real, billed phone calls, so the integration is safe by default:
    call"* action; nothing is dispatched automatically.
 
 3. **Multi-factor identity gate** for anything that reveals personal data (the
-   read-inbox path — *implemented but blocked upstream on #399*).
+   read-inbox path (*implemented but blocked upstream on #399*).
    `VolunteerInboxService#verify` requires a known email, a correct 6-digit PIN,
    and (on the hotline) a matching caller phone (ANI):
 
@@ -180,7 +210,7 @@ database. Real calls require `CALLE_DRY_RUN=0` and a valid `CALLE_API_KEY`.
 # dry-run (no call placed, no key needed)
 CALLE_DRY_RUN=1 bin/rails runner 'puts CalleClient.start_call(to_phone: "+66812345678", goal: "Say hello.").dry_run?'
 
-# real call — explicit opt-in
+# real call (explicit opt-in)
 CALLE_DRY_RUN=0 CALLE_API_KEY=... bin/rails runner 'CalleClient.start_call(to_phone: "+66812345678", goal: "Say hello.")'
 ```
 
@@ -202,7 +232,7 @@ Code / Codex.
   but dormant.
 - **Inbound goals can't attach external MCP tools** (our feature request): the
   agent can't query the inbox mid-call, hence the two-call read-back.
-- **CALL-E has no Ruby SDK** — we call the HTTP API directly.
+- **CALL-E has no Ruby SDK:** we call the HTTP API directly.
 
 ---
 
